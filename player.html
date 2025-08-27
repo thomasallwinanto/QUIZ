@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quiz — Player</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width:600px; margin:20px auto; }
+    .hidden { display:none }
+    button { padding:10px 14px; margin:6px 0; }
+  </style>
+</head>
+<body>
+  <h1>Join Quiz</h1>
+  <div id="join">
+    <input id="name" placeholder="Your name" />
+    <button id="joinBtn">Join</button>
+  </div>
+
+  <div id="quiz" class="hidden">
+    <h2 id="qtext"></h2>
+    <div id="choices"></div>
+    <div id="status"></div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const joinBtn = document.getElementById('joinBtn');
+    const nameInput = document.getElementById('name');
+    const joinDiv = document.getElementById('join');
+    const quizDiv = document.getElementById('quiz');
+    const qtext = document.getElementById('qtext');
+    const choicesDiv = document.getElementById('choices');
+    const statusDiv = document.getElementById('status');
+
+    joinBtn.onclick = () => {
+      const name = nameInput.value.trim() || 'Anonymous';
+      socket.emit('join', { role: 'player', name });
+      joinDiv.classList.add('hidden');
+      quizDiv.classList.remove('hidden');
+    };
+
+    socket.on('question', (data) => {
+      const q = data.question;
+      if (!q) { qtext.textContent = 'No question.'; choicesDiv.innerHTML = ''; return; }
+      qtext.textContent = q.text;
+      choicesDiv.innerHTML = '';
+      q.choices.forEach(ch => {
+        const btn = document.createElement('button');
+        btn.textContent = ch.text;
+        btn.onclick = () => {
+          socket.emit('answer', { index: data.index, choice: ch.i });
+          statusDiv.textContent = 'Answer sent';
+        };
+        choicesDiv.appendChild(btn);
+      });
+    });
+  </script>
+</body>
+</html>

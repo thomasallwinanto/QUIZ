@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quiz — Host</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width:900px; margin:20px auto; }
+    #players { max-height:300px; overflow:auto; border:1px solid #ddd; padding:8px }
+    .player { padding:6px; border-bottom:1px solid #eee }
+    button { padding:8px 12px; margin-right:8px }
+  </style>
+</head>
+<body>
+  <h1>Host Control</h1>
+  <div>
+    <button id="prev">Prev</button>
+    <button id="next">Next</button>
+  </div>
+
+  <h2>Current Question</h2>
+  <div id="qarea"></div>
+
+  <h2>Participants</h2>
+  <div id="players"></div>
+
+  <h2>Top 3</h2>
+  <ol id="top3"></ol>
+
+  <p>Share this QR / link with participants:</p>
+  <p><a id="link" href="#">Open player page</a></p>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    socket.emit('join', { role: 'host' });
+
+    const prevBtn = document.getElementById('prev');
+    const nextBtn = document.getElementById('next');
+    const playersDiv = document.getElementById('players');
+    const qarea = document.getElementById('qarea');
+    const top3 = document.getElementById('top3');
+    const link = document.getElementById('link');
+    link.href = window.location.origin + '/player.html';
+    link.textContent = link.href;
+
+    prevBtn.onclick = () => socket.emit('prev');
+    nextBtn.onclick = () => socket.emit('next');
+
+    socket.on('state', (state) => {
+      // show current question
+      const q = state.questions[state.currentIndex];
+      if (q) {
+        qarea.innerHTML = `<strong>${q.text}</strong><div>${q.choices.map((c,i)=>`<div>${i}. ${c}</div>`).join('')}</div>`;
+      } else qarea.textContent = 'No question';
+
+      // players
+      playersDiv.innerHTML = '';
+      const list = Object.entries(state.participants || {}).map(([id,p])=>({ id, ...p }));
+      list.forEach(p=>{
+        const d = document.createElement('div');
+        d.className = 'player';
+        d.innerHTML = `<strong>${escapeHtml(p.name)}</strong> — ${p.score} pts`;
+        playersDiv.appendChild(d);
+      });
+
+      // top3
+      const sorted = list.slice().sort((a,b)=>b.score - a.score).slice(0,3);
+      top3.innerHTML = sorted.map(s=>`<li>${escapeHtml(s.name)} — ${s.score}</li>`).join('');
+    });
+
+    function escapeHtml(s){ return (s+'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;" })[c]); }
+  </script>
+</body>
+</html>

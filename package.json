@@ -1,0 +1,16 @@
+{
+  "name": "quiz-for-sept",
+  "version": "1.0.0",
+  "description": "Simple realtime quiz (host + participants) using Socket.IO",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
+  }
+}
